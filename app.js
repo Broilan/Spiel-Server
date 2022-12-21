@@ -36,6 +36,9 @@ app.get('/', (req, res) => {
 
 app.use('/examples', require('./controllers/example'));
 app.use('/users', require('./controllers/user'));
+app.use('/spiel', require('./controllers/spiel'));
+app.use('/group', require('./controllers/group'));
+
 
 // Server
 const server = app.listen(PORT, () => console.log(`Server is running on PORT: ${PORT}`));
