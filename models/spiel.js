@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const spielSchema = new Schema({
-    user: String,
+    name: String,
     group: String,
     message: String,
 

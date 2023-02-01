@@ -5,20 +5,187 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
+const Spiel = require('../models/spiel');
+const Group = require('../models/group');
+const multer = require('multer');
 const { JWT_SECRET } = process.env;
+
 
 // DB Models
 const User = require('../models/user');
+
+const fileStorageEngine = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, './uploads')
+    },
+    filename: function (req, file, cb) {
+      cb(null, Date.now() + '-' + file.originalname)
+    }
+  })
+
+  const upload = multer({storage: fileStorageEngine})
+
 
 // Controllers
 router.get('/test', (req, res) => {
     res.json({ message: 'User endpoint OK! ✅' });
 });
 
+router.get('/:id', (req, res) => {
+    // Purpose: Fetch one example from DB and return
+    console.log('=====> Inside GET /users/:id');
+
+    User.findById(req.params.id)
+    .then(example => {
+        res.json({ example: example });
+    })
+    .catch(err => {
+        console.log('Error in user#show:', err);
+        res.json({ message: 'Error occured... Please try again.'})
+    });
+});
+
+
+router.get('/:id/spiels', passport.authenticate('jwt', { session: false }), (req, res) => {
+    console.log('route is being on PUT')
+    User.findById( req.params.id )
+        .then(FoundUser => {
+            console.log('User found', FoundUser);
+            Spiel.find({name: FoundUser.name})
+            .then(FoundSpiel => {
+                res.json({ Spiels: FoundSpiel });
+                })
+        })
+        .catch(error => {
+            console.log('error', error)
+            res.json({ message: "Error ocurred, please try again" })
+        })
+});
+
+
+router.put('/:id', passport.authenticate('jwt', { session: false }), (req, res) => {
+    console.log('route is being on PUT')
+    User.findById(req.params.id)
+        .then(foundUser => {
+            console.log('user found', foundUser);
+            User.findByIdAndUpdate(req.params.id,
+                {
+                    name: req.body.name ? req.body.name : foundUser.name,
+                    bio: req.body.bio ? req.body.bio : foundUser.bio,
+                    email: req.body.email ? req.body.email : foundUser.email,
+                })
+                .then(User => {
+                    console.log('User was updated, old info ---->', User);
+                })
+                .catch(error => {
+                    console.log('error', error)
+                    res.json({ message: "Error ocurred, please try again" })
+                })
+        })
+        .catch(error => {
+            console.log('error', error)
+            res.json({ message: "Error ocurred, please try again" })
+        })
+});
+
+router.put('/:id/group/:idx', passport.authenticate('jwt', { session: false }), (req, res) => {
+    console.log('route is being on PUT')
+    User.findById(req.params.id)
+    .then(foundUser => {
+        const userGroups = foundUser.groups
+        console.log("found user groups ==>", userGroups)
+    
+    Group.findById(req.params.idx)
+        .then(foundGroup => {
+            console.log('group found', foundGroup._id);
+            const fGroup = String(foundGroup._id)
+            userGroups.push(fGroup)
+            console.log("groups added ===>", userGroups)
+            User.findByIdAndUpdate(req.params.id,
+                {
+                    groups: userGroups
+                })
+                .then(User => {
+                    res.json({User: User})
+                    console.log('User was updated, old info ---->', User);
+                })
+                .catch(error => {
+                    console.log('error', error)
+                    res.json({ message: "Error ocurred, please try again" })
+                })
+        })
+        .catch(error => {
+            console.log('error', error)
+            res.json({ message: "Error ocurred, please try again" })
+        })})
+
+});
+
+router.put('/:id/spiels/:idx', passport.authenticate('jwt', { session: false }), (req, res) => {
+    console.log('route is being on PUT')
+    User.findById(req.params.id)
+    .then(foundUser => {
+        const userSpiels = foundUser.spiels
+        console.log("found user spiels ==>", userSpiels)
+    
+    Spiel.findById(req.params.idx)
+        .then(foundSpiel => {
+            console.log('spiel found', foundSpiel);
+            const fGroup = String(foundSpiel._id)
+            userSpiels.push(fGroup)
+            console.log("spiels added ===>", userSpiels)
+            User.findByIdAndUpdate(req.params.id,
+                {
+                    spiels: userSpiels
+                })
+                .then(User => {
+                    res.json({User: User})
+                    console.log('User was updated, old info ---->', User);
+                })
+                .catch(error => {
+                    console.log('error', error)
+                    res.json({ message: "Error ocurred, please try again" })
+                })
+        })
+        .catch(error => {
+            console.log('error', error)
+            res.json({ message: "Error ocurred, please try again" })
+        })})
+
+});
+
+router.get('/', passport.authenticate('jwt', { session: false }), (req, res) => {
+    User.find({})
+    .then(user => {
+        res.json({ user: user });
+    })
+    .catch(err => {
+        res.json({ message: 'Error occured... Please try again.'})
+    });
+});
+
+router.get('/:id/group', passport.authenticate('jwt', { session: false }), (req, res) => {
+    console.log('route is being on get')
+    User.findById( req.params.id )
+        .then(FoundUser => {
+            console.log('User found', FoundUser);
+            Group.find({_id: FoundUser.groups})
+            .then(FoundGroup => {
+                console.log("found groups", FoundGroup)
+                res.json({ FoundGroup: FoundGroup });
+                })
+        })
+        .catch(error => {
+            console.log('error', error)
+            res.json({ message: "Error ocurred, please try again" })
+        })
+});
+
 router.post('/signup', (req, res) => {
     // POST - adding the new user to the database
     console.log('===> Inside of /signup');
     console.log('===> /register -> req.body',req.body);
+    console.log(req.file)
 
     User.findOne({ email: req.body.email })
     .then(user => {
@@ -31,7 +198,11 @@ router.post('/signup', (req, res) => {
             const newUser = new User({
                 name: req.body.name,
                 email: req.body.email,
-                password: req.body.password
+                bio: "add a bio!",
+                image: "pfp",
+                password: req.body.password,
+                spiels: [],
+                groups: []
             });
 
             // Salt and hash the password - before saving the user
@@ -57,6 +228,8 @@ router.post('/signup', (req, res) => {
         res.json({ message: 'Error occured... Please try again.'})
     })
 });
+
+
 
 router.post('/login', async (req, res) => {
     // POST - finding a user and returning the user
@@ -103,9 +276,69 @@ router.get('/profile', passport.authenticate('jwt', { session: false }), (req, r
     console.log(req.body);
     console.log('====> user')
     console.log(req.user);
-    const { id, name, email } = req.user; // object with user object inside
-    res.json({ id, name, email });
+    const { id, name, bio, email, image } = req.user; // object with user object inside
+    res.json({ id, name, email, bio, image });
 });
+
+router.put('/:id', passport.authenticate('jwt', { session: false }), (req, res) => {
+    console.log('route is being on PUT')
+    User.findById(req.params.id)
+        .then(foundUser => {
+            console.log('user found', foundUser);
+            User.findByIdAndUpdate(req.params.id,
+                {
+                    name: req.body.name ? req.body.name : foundUser.name,
+                    bio: req.body.bio ? req.body.bio : foundUser.bio,
+                    email: req.body.email ? req.body.email : foundUser.email,
+                })
+                .then(User => {
+                    console.log('User was updated, old info ---->', User);
+                })
+                .catch(error => {
+                    console.log('error', error)
+                    res.json({ message: "Error ocurred, please try again" })
+                })
+        })
+        .catch(error => {
+            console.log('error', error)
+            res.json({ message: "Error ocurred, please try again" })
+        })
+
+});
+
+//change your pfp
+router.put('/:id', upload.single('image'),passport.authenticate('jwt', { session: false }), (req, res) => {
+    console.log('route is being on xyz')
+    console.log(req.file)
+
+    User.findById(req.params.id)
+        .then(foundUser => {
+            console.log('user found', foundUser);
+            User.findByIdAndUpdate(req.params.id,
+                {
+                    name: req.body.name ? req.body.name : foundUser.name,
+                    email: req.body.email ? req.body.email : foundUser.email,
+                    password: req.body.password ? req.body.password : foundUser.password,
+                    image: req.file.filename ? req.file.filename : foundUser.image,
+                })
+                .then(post => {
+                    console.log('Post was updated', post);
+                    res.header("Authorization", req.headers["Authorization"])
+                    res.redirect(`/users/:id/profile`)
+                })
+                .catch(error => {
+                    console.log('error', error)
+                    res.json({ message: "Error ocurred, please try again" })
+                })
+        })
+        .catch(error => {
+            console.log('error', error)
+            res.json({ message: "Error ocurred, please try again" })
+        })
+
+});
+
+
 
 router.get('/messages', passport.authenticate('jwt', { session: false }), async (req, res) => {
     console.log('====> inside /messages');

@@ -21,6 +21,8 @@ const MONGO_CONNECTION_STRING = process.env.MONGO_CONNECTION_STRING;
 mongoose.connect(MONGO_CONNECTION_STRING, { useNewUrlParser: true, useUnifiedTopology: true });
 const db = mongoose.connection;
 
+
+
 db.once('open', () => {
     console.log(`Connected to MongoDB at HOST: ${db.host} and PORT: ${db.port}`);
 });
@@ -36,8 +38,9 @@ app.get('/', (req, res) => {
 
 app.use('/examples', require('./controllers/example'));
 app.use('/users', require('./controllers/user'));
-app.use('/spiel', require('./controllers/spiel'));
 app.use('/group', require('./controllers/group'));
+app.use('/spiel', require('./controllers/spiel'));
+
 
 
 // Server

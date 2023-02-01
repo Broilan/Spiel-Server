@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Spiel = require('../models/spiel');
+const Group = require('../models/group');
 const passport = require('passport');
 const mongoose = require('mongoose');
+const { ObjectID } = require('mongodb');
 
 const MONGO_CONNECTION_STRING = process.env.MONGO_CONNECTION_STRING;
 mongoose.connect(MONGO_CONNECTION_STRING, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -19,19 +21,27 @@ router.get('/', passport.authenticate('jwt', { session: false }), (req, res) => 
     });
 });
 
+router.get('/:id', passport.authenticate('jwt', { session: false }), (req, res) => {
+    Spiel.find({_id: req.params.id})
+    .then(spiel => {
+        res.json({ spiel: spiel });
+    })
+    .catch(err => {
+        res.json({ message: 'Error occured... Please try again.'})
+    });
+});
+
 
 
 router.post('/', passport.authenticate('jwt', { session: false }), (req, res) => {
     Spiel.create({
-        user: req.body.user,
+        name: req.body.name,
         group: req.body.group,
         message: req.body.message
     })
     .then(spiel => {
         console.log('New spiel =>>', spiel);
-        console.log(req)
-        res.header("Authorization", req.headers["Authorization"])
-        res.redirect("/spiel");
+        res.json({spielID: spiel._id})
     })
     .catch(error => { 
         console.log('error', error) 
@@ -50,7 +60,6 @@ router.put('/:id', (req, res) => {
             console.log('Post found', foundSpiel);
             Spiel.findByIdAndUpdate(req.params.id,
                 {
-                    user: req.body.user ? req.body.user : foundSpiel.user,
                     group: req.body.group ? req.body.group : foundSpiel.group,
                     message: req.body.message ? req.body.message : foundSpiel.message,
                 })

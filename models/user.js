@@ -15,6 +15,12 @@ const userSchema = new Schema({
         required: true,
         minLength: 8
     },
+    image: {
+        type: String,
+    },
+    bio: {
+        type: String
+    },
     spiels: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Spiel'
