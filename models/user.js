@@ -21,6 +21,13 @@ const userSchema = new Schema({
     bio: {
         type: String
     },
+    likedPosts: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Spiel'
+    }],
+    comments: [{
+        type: Array
+    }],
     spiels: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Spiel'
@@ -29,6 +36,7 @@ const userSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Group'
     }],
+
 
     date: {
         type: Date,

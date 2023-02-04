@@ -36,8 +36,8 @@ router.get('/:id', (req, res) => {
     console.log('=====> Inside GET /users/:id');
 
     User.findById(req.params.id)
-    .then(example => {
-        res.json({ example: example });
+    .then(user => {
+        res.json({ user: user });
     })
     .catch(err => {
         console.log('Error in user#show:', err);
@@ -61,6 +61,24 @@ router.get('/:id/spiels', passport.authenticate('jwt', { session: false }), (req
             res.json({ message: "Error ocurred, please try again" })
         })
 });
+
+router.get('/likes/:id', passport.authenticate('jwt', { session: false }), (req, res) => {
+    console.log('route is being on GET')
+    User.findById( req.params.id )
+        .then(FoundUser => {
+            const userLikes = FoundUser.likedPosts
+            console.log('User likes found', userLikes);
+            Spiel.find({_id: userLikes})
+            .then(FoundSpiel => {
+                res.json({ Spiels: FoundSpiel });
+                })
+        })
+        .catch(error => {
+            console.log('error', error)
+            res.json({ message: "Error ocurred, please try again" })
+        })
+});
+
 
 
 router.put('/:id', passport.authenticate('jwt', { session: false }), (req, res) => {
@@ -87,6 +105,8 @@ router.put('/:id', passport.authenticate('jwt', { session: false }), (req, res) 
             res.json({ message: "Error ocurred, please try again" })
         })
 });
+
+
 
 router.put('/:id/group/:idx', passport.authenticate('jwt', { session: false }), (req, res) => {
     console.log('route is being on PUT')
@@ -118,8 +138,72 @@ router.put('/:id/group/:idx', passport.authenticate('jwt', { session: false }), 
             console.log('error', error)
             res.json({ message: "Error ocurred, please try again" })
         })})
-
 });
+
+router.put('/:name/likes/:id', passport.authenticate('jwt', { session: false }), (req, res) => {
+    console.log('route is being on PUT')
+    User.find({name: req.params.name})
+    .then(foundUser => {
+        const userLikes = foundUser[0].likedPosts
+
+    Spiel.findById(req.params.id)
+        .then(foundSpiel => {
+            console.log('spiel found', foundSpiel._id);
+            const fGroup = String(foundSpiel._id)
+            userLikes.push(fGroup)
+            console.log("spiels added ===>", userLikes)
+            User.findOneAndUpdate({name: req.params.name},
+                {
+                    likedPosts: userLikes
+                })
+                .then(User => {
+                    res.json({User: User})
+                    console.log('User was updated, old info ---->', User);
+                })
+                .catch(error => {
+                    console.log('error', error)
+                    res.json({ message: "Error ocurred, please try again" })
+                })
+        })
+        .catch(error => {
+            console.log('error', error)
+            res.json({ message: "Error ocurred, please try again" })
+        })})
+});
+
+// router.put('/:name/comments', passport.authenticate('jwt', { session: false }), (req, res) => {
+//     console.log('route is being on PUT')
+//     User.find({name: req.params.name})
+//     .then(foundUser => {
+//         const userComments = foundUser[0].comments
+//         console.log("found user comments ==>", userComments)
+//     Comment.find({name: req.params.name})
+//         .then(foundComment => {
+//             console.log('comments found', comments);
+//             const fGroup = String(comments._id)
+//             userLikes.push(fGroup)
+//             console.log("spiels added ===>", userLikes)
+//             User.findOneAndUpdate({name: req.params.name},
+//                 {
+//                     likedPosts: userLikes
+//                 })
+//                 .then(User => {
+//                     res.json({User: User})
+//                     console.log('User was updated, old info ---->', User);
+//                 })
+//                 .catch(error => {
+//                     console.log('error', error)
+//                     res.json({ message: "Error ocurred, please try again" })
+//                 })
+//         })
+//         .catch(error => {
+//             console.log('error', error)
+//             res.json({ message: "Error ocurred, please try again" })
+//         })})
+
+// });
+
+
 
 router.put('/:id/spiels/:idx', passport.authenticate('jwt', { session: false }), (req, res) => {
     console.log('route is being on PUT')
@@ -185,7 +269,6 @@ router.post('/signup', (req, res) => {
     // POST - adding the new user to the database
     console.log('===> Inside of /signup');
     console.log('===> /register -> req.body',req.body);
-    console.log(req.file)
 
     User.findOne({ email: req.body.email })
     .then(user => {
@@ -202,7 +285,9 @@ router.post('/signup', (req, res) => {
                 image: "pfp",
                 password: req.body.password,
                 spiels: [],
-                groups: []
+                groups: [],
+                comments: [],
+                likedPosts: []
             });
 
             // Salt and hash the password - before saving the user
@@ -276,7 +361,7 @@ router.get('/profile', passport.authenticate('jwt', { session: false }), (req, r
     console.log(req.body);
     console.log('====> user')
     console.log(req.user);
-    const { id, name, bio, email, image } = req.user; // object with user object inside
+    const { id, name, bio, email, image, spiels, likedPosts, comments, groups  } = req.user; // object with user object inside
     res.json({ id, name, email, bio, image });
 });
 

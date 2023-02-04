@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Spiel = require('../models/spiel');
 const Group = require('../models/group');
+const Comment = require('../models/comment');
 const passport = require('passport');
 const mongoose = require('mongoose');
 const { ObjectID } = require('mongodb');
@@ -22,7 +23,7 @@ router.get('/', passport.authenticate('jwt', { session: false }), (req, res) => 
 });
 
 router.get('/:id', passport.authenticate('jwt', { session: false }), (req, res) => {
-    Spiel.find({_id: req.params.id})
+    Spiel.findById({_id: req.params.id})
     .then(spiel => {
         res.json({ spiel: spiel });
     })
@@ -37,7 +38,9 @@ router.post('/', passport.authenticate('jwt', { session: false }), (req, res) =>
     Spiel.create({
         name: req.body.name,
         group: req.body.group,
-        message: req.body.message
+        message: req.body.message,
+        likes: 0,
+        comments: []
     })
     .then(spiel => {
         console.log('New spiel =>>', spiel);
@@ -76,8 +79,39 @@ router.put('/:id', (req, res) => {
             console.log('error', error)
             res.json({ message: "Error ocurred, please try again" })
         })
-
 });
+
+
+//liking a post
+router.put('/:id/like', passport.authenticate('jwt', { session: false }), (req, res) => {
+    console.log('route is being on PUT')
+    Spiel.findById(req.params.id)
+        .then(foundSpiel => {
+            console.log('spiel found', foundSpiel);
+            const spielLikes = foundSpiel.likes
+            console.log("spiel likes ===>", spielLikes)
+            Spiel.findByIdAndUpdate(req.params.id,
+                {
+                    likes: spielLikes + 1
+                })
+                .then(Spiel => {
+                    res.json({Spiel: Spiel})
+                    console.log('Spiel was updated, old info ---->', Spiel);
+                })
+                .catch(error => {
+                    console.log('error', error)
+                    res.json({ message: "Error ocurred, please try again" })
+                })
+        })
+        .catch(error => {
+            console.log('error', error)
+            res.json({ message: "Error ocurred, please try again" })
+        })})
+
+
+
+
+
 
 router.delete('/:id',passport.authenticate('jwt', { session: false }), (req, res) => {
     // Purpose: Update one example in the DB, and return

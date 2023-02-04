@@ -5,6 +5,11 @@ const spielSchema = new Schema({
     name: String,
     group: String,
     message: String,
+    likes: Number,
+    comments: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Comment'
+    }],
 
     date: {
         type: Date,
