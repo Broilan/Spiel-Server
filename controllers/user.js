@@ -47,7 +47,7 @@ router.get('/:id', (req, res) => {
 
 
 router.get('/:id/spiels', passport.authenticate('jwt', { session: false }), (req, res) => {
-    console.log('route is being on PUT')
+    console.log('route is being on get 1')
     User.findById( req.params.id )
         .then(FoundUser => {
             console.log('User found', FoundUser);
@@ -55,6 +55,40 @@ router.get('/:id/spiels', passport.authenticate('jwt', { session: false }), (req
             .then(FoundSpiel => {
                 res.json({ Spiels: FoundSpiel });
                 })
+        })
+        .catch(error => {
+            console.log('error', error)
+            res.json({ message: "Error ocurred, please try again" })
+        })
+});
+
+router.get('/following/:name', passport.authenticate('jwt', { session: false }), (req, res) => {
+    console.log('route is being on get 3')
+    User.find({name: req.params.name})
+        .then(FoundUser => {
+            console.log("a;lksdjfjksf", FoundUser)
+            User.find({_id: FoundUser[0].following})
+            .then(foundFollowing => {
+            res.json({UserFollowing: foundFollowing})
+            })
+            
+        })
+        .catch(error => {
+            console.log('error', error)
+            res.json({ message: "Error ocurred, please try again" })
+        })
+});
+
+router.get('/followers/:name', passport.authenticate('jwt', { session: false }), (req, res) => {
+    console.log('route is being on get 3')
+    User.find({name: req.params.name})
+        .then(FoundUser => {
+            console.log("foundUser ===>", FoundUser[0].name)
+            User.find({_id: FoundUser[0].followers})
+            .then(foundFollowers => {
+            res.json({UserFollowers: foundFollowers})
+            })
+            
         })
         .catch(error => {
             console.log('error', error)
@@ -128,6 +162,51 @@ router.put('/:id/group/:idx', passport.authenticate('jwt', { session: false }), 
                 .then(User => {
                     res.json({User: User})
                     console.log('User was updated, old info ---->', User);
+                })
+                .catch(error => {
+                    console.log('error', error)
+                    res.json({ message: "Error ocurred, please try again" })
+                })
+        })
+        .catch(error => {
+            console.log('error', error)
+            res.json({ message: "Error ocurred, please try again" })
+        })})
+});
+
+router.put('/:name/follow/:namex', passport.authenticate('jwt', { session: false }), (req, res) => {
+    console.log('route is being on PUT')
+    User.find({name: req.params.name})
+    .then(foundUser => {
+        const userFollowing = foundUser[0].following
+        const firstUserId = foundUser[0]._id
+        console.log("found user", firstUserId)
+        console.log("first user following ==>", userFollowing)
+    User.find({name: req.params.namex})
+        .then(secondUser => {  
+            const secondUserFollowers = secondUser[0].followers
+            const secondUserId = secondUser[0]._id
+            console.log('second user found', secondUser[0]._id);
+            console.log('second user followers found==>', secondUserFollowers)
+            userFollowing.push(secondUserId)
+            secondUserFollowers.push(firstUserId) 
+            console.log("first user following pushed ===>", userFollowing)
+            console.log("second user followers pushed ===>", secondUserFollowers)
+            User.findOneAndUpdate({name: req.params.name},
+                {
+                    following: userFollowing
+                })
+                .then(UserUpdate => {
+                    console.log('User was updated, old info ---->', UserUpdate);
+                    User.findOneAndUpdate({name: req.params.namex}, 
+                        {
+                            followers: secondUserFollowers
+                    })
+                    .then(User => {
+                        res.json({User: User})
+                        console.log("second user follower===>", User)
+                    })
+                        
                 })
                 .catch(error => {
                     console.log('error', error)
@@ -287,6 +366,8 @@ router.post('/signup', (req, res) => {
                 spiels: [],
                 groups: [],
                 comments: [],
+                followers: [],
+                following: ['63df105e41eb75462411caa3'],
                 likedPosts: []
             });
 
