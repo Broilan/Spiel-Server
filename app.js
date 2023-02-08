@@ -40,6 +40,7 @@ app.use('/examples', require('./controllers/example'));
 app.use('/users', require('./controllers/user'));
 app.use('/group', require('./controllers/group'));
 app.use('/comment', require('./controllers/comment'));
+app.use('/notifications', require('./controllers/notification'));
 app.use('/spiel', require('./controllers/spiel'));
 
 

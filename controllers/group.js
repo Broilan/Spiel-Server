@@ -38,6 +38,19 @@ router.get('/:id', passport.authenticate('jwt', { session: false }), (req, res) 
    
 });
 
+//render group feed page
+router.get('/group/:name', passport.authenticate('jwt', { session: false }), (req, res) => {
+    Group.find({name: req.params.name})
+        .then(foundGroup => {
+            res.json({foundGroup:foundGroup})
+        })
+
+    .catch(err => {
+        res.json({ message: 'Error occured... Please try again.'})
+    });
+   
+});
+
 //user can create a group
 
 router.post('/', passport.authenticate('jwt', { session: false }), (req, res) => {

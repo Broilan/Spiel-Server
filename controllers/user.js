@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const Spiel = require('../models/spiel');
 const Group = require('../models/group');
+const Notification = require('../models/notification');
 const multer = require('multer');
 const { JWT_SECRET } = process.env;
 
@@ -38,6 +39,54 @@ router.get('/:id', (req, res) => {
     User.findById(req.params.id)
     .then(user => {
         res.json({ user: user });
+    })
+    .catch(err => {
+        console.log('Error in user#show:', err);
+        res.json({ message: 'Error occured... Please try again.'})
+    });
+});
+
+router.get('/notifications/:name', (req, res) => {
+    // Purpose: Fetch one example from DB and return
+    console.log('=====> Inside GET /users/:id');
+
+    User.find({name: req.params.name})
+    .then(user => {
+        Notification.find({_id: user[0].notifications})
+        .then(response => {
+            res.json({ response: response });
+        })
+    })
+    .catch(err => {
+        console.log('Error in user#show:', err);
+        res.json({ message: 'Error occured... Please try again.'})
+    });
+});
+
+router.get('/name/:name', (req, res) => {
+    // Purpose: Fetch one example from DB and return
+    console.log('=====> Inside GET /users/:id');
+
+    User.find({name: req.params.name})
+    .then(user => {
+        res.json({ user: user });
+    })
+    .catch(err => {
+        console.log('Error in user#show:', err);
+        res.json({ message: 'Error occured... Please try again.'})
+    });
+});
+
+router.get('/groups/:name/groups', (req, res) => {
+    // Purpose: Fetch one example from DB and return
+    console.log('=====> Inside GET /users/:id');
+
+    User.find({name: req.params.name})
+    .then(user => {
+        Group.find({_id: user[0].groups})
+        .then(groups => {
+            res.json({groups: groups})
+        })
     })
     .catch(err => {
         console.log('Error in user#show:', err);
@@ -122,9 +171,9 @@ router.put('/:id', passport.authenticate('jwt', { session: false }), (req, res) 
             console.log('user found', foundUser);
             User.findByIdAndUpdate(req.params.id,
                 {
-                    name: req.body.name ? req.body.name : foundUser.name,
-                    bio: req.body.bio ? req.body.bio : foundUser.bio,
-                    email: req.body.email ? req.body.email : foundUser.email,
+                    name: req.body.name,
+                    bio: req.body.bio ,
+                    email: req.body.email
                 })
                 .then(User => {
                     console.log('User was updated, old info ---->', User);
@@ -227,6 +276,7 @@ router.put('/:name/likes/:id', passport.authenticate('jwt', { session: false }),
 
     Spiel.findById(req.params.id)
         .then(foundSpiel => {
+            const poster = foundSpiel.name
             console.log('spiel found', foundSpiel._id);
             const fGroup = String(foundSpiel._id)
             userLikes.push(fGroup)
@@ -235,9 +285,27 @@ router.put('/:name/likes/:id', passport.authenticate('jwt', { session: false }),
                 {
                     likedPosts: userLikes
                 })
-                .then(User => {
-                    res.json({User: User})
+                .then(user => {
+                    res.json({user: user})
                     console.log('User was updated, old info ---->', User);
+                    Notification.find({spielID: req.params.id})
+                    .then(foundNotif => {
+                        const notifID = foundNotif //array of id's
+                        User.find({name: poster}) 
+                         .then(foundPoster => {
+                        const notifs = foundPoster[0].notifications
+                        notifID.map((n) => notifs.push(n._id))
+                        console.log("posterrrrrrrrrrr", notifs)
+                         User.findOneAndUpdate({name: poster},
+                            {
+                            notifications: notifs
+                         })
+                    .then(response => {
+                        console.log(response)
+                    })})
+                    })
+                    
+                  
                 })
                 .catch(error => {
                     console.log('error', error)
@@ -368,6 +436,7 @@ router.post('/signup', (req, res) => {
                 comments: [],
                 followers: [],
                 following: ['63df105e41eb75462411caa3'],
+                notifications: [],
                 likedPosts: []
             });
 
