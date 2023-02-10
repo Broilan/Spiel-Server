@@ -42,6 +42,7 @@ app.use('/group', require('./controllers/group'));
 app.use('/comment', require('./controllers/comment'));
 app.use('/notifications', require('./controllers/notification'));
 app.use('/spiel', require('./controllers/spiel'));
+app.use('/bookmark', require('./controllers/bookmark'));
 
 
 

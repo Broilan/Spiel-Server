@@ -48,6 +48,10 @@ const userSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Notifications'
     }],
+    bookmarks: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Bookmarks'
+    }],
     
 
 

@@ -8,11 +8,26 @@ const passport = require('passport');
 const Spiel = require('../models/spiel');
 const Group = require('../models/group');
 const Notification = require('../models/notification');
+const Bookmark = require('../models/Bookmark');
 const multer = require('multer');
 const { JWT_SECRET } = process.env;
 
 
 // DB Models
+
+// Notification.find({to: req.params.namex})
+// .then(foundNotif => {
+//     const notifID = foundNotif //array of id's
+//     User.find({name: req.params.namex}) 
+//      .then(foundPoster => {
+//     const notifs = foundPoster[0].notifications
+//     notifID.map((n) => notifs.push(n._id))
+//     console.log("posterrrrrrrrrrr", notifs)
+//      User.findOneAndUpdate({name: poster},
+//         {
+//         notifications: notifs
+//      })
+
 const User = require('../models/user');
 
 const fileStorageEngine = multer.diskStorage({
@@ -62,6 +77,27 @@ router.get('/notifications/:name', (req, res) => {
         res.json({ message: 'Error occured... Please try again.'})
     });
 });
+
+router.get('/bookmarks/:userID', (req, res) => {
+        Bookmark.find({UserID: req.params.userID})
+        .then(response => {
+            res.json({ response: response });
+        })
+    })
+
+
+    // router.get('/profileBkmks/:userID', passport.authenticate('jwt', { session: false }), (req, res) => {
+    //     Bookmark.find({UserID: req.params.userID})
+    //     .then(foundBookmarks => {
+    //         console.log("foundbkskskksks", foundBookmarks)
+    //             Spiel.find({_id: foundBookmarks[0].spielID})
+    //            .then(bookmarked => {
+    //               console.log("bookmarked", bookmarked)
+    //               res.json({bookmarked: bookmarked})
+    //             })
+    //     })
+    // })
+
 
 router.get('/name/:name', (req, res) => {
     // Purpose: Fetch one example from DB and return
@@ -222,6 +258,112 @@ router.put('/:id/group/:idx', passport.authenticate('jwt', { session: false }), 
             res.json({ message: "Error ocurred, please try again" })
         })})
 });
+
+//create bookmark and add to user
+router.put('/bookmark/:userID/:spielID', passport.authenticate('jwt', { session: false }), (req, res) => {
+    console.log('req body', req.body)
+    Bookmark.create ({
+        UserID: req.params.userID,
+        spiel: req.body,
+        spielID: req.params.spielID
+    })
+    .then(newBookmark => {
+        const bookmarkID = newBookmark._id
+        console.log("found newbookmark ==>", newBookmark)
+    
+    User.findById(req.params.userID)
+        .then(foundUser => {
+            const userBookmarks = foundUser.bookmarks
+            userBookmarks.push(bookmarkID)
+            console.log("userBookmarks added ===>", userBookmarks)
+            User.findByIdAndUpdate(req.params.userID,
+                {
+                    bookmarks: userBookmarks
+                })
+                .then(User => {
+                    console.log('User was updated, old info ---->', User);
+                    Spiel.findById(req.params.spielID)
+                    .then(foundSpiel => {
+                        const spielBookmarks = foundSpiel.bookmarks
+                        spielBookmarks.push(bookmarkID)
+                        console.log("spielBookmarks added ===>", spielBookmarks)
+                        Spiel.findByIdAndUpdate(req.params.spielID,
+                            {
+                                bookmarks: spielBookmarks
+                            })
+                            .then(Spiel => {
+                                res.json({Spiel: Spiel})
+                                console.log('Spiel was updated, old info ---->', Spiel);
+                            })
+                })
+                .catch(error => {
+                    console.log('error', error)
+                    res.json({ message: "Error ocurred, please try again" })
+                })
+        })
+        .catch(error => {
+            console.log('error', error)
+            res.json({ message: "Error ocurred, please try again" })
+        })})
+});
+})
+
+//remove deleted bookmark from the user
+router.put('/remove/bookmark/:userID/:spielID', passport.authenticate('jwt', { session: false }), (req, res) => {
+    User.findById(req.params.userID)
+        .then(foundUser => {
+            const userBookmarks = foundUser.bookmarks
+            Spiel.findById(req.params.spielID)
+            .then(foundSpiel => {
+                const spielBookmarks = foundSpiel.bookmarks
+                
+            for(let i=0; i<=spielBookmarks.length; i++) {
+            for(let i=0; i<= userBookmarks.length; i++){
+                console.log(userBookmarks[i], spielBookmarks[i])
+                if(userBookmarks[i] == spielBookmarks[i] ) {
+                    console.log("usermarks", userBookmarks, "spielmarks", spielBookmarks) 
+                    Bookmark.findByIdAndDelete({_id: userBookmarks[i]})
+                    userBookmarks.splice(userBookmarks[i], 1)
+                    spielBookmarks.splice(spielBookmarks[i], 1)
+                    
+                    break
+                }else {
+                    console.log("wrong bookmark")
+                }
+            }}
+            User.findByIdAndUpdate(req.params.userID,
+                {
+                    bookmarks: userBookmarks
+                })
+                .then(User => {
+                    console.log('User was updated, old info ---->', User);
+                })
+                .then(response => {
+                    console.log("response", response);
+                })
+            Spiel.findByIdAndUpdate(req.params.spielID, {
+                bookmarks: spielBookmarks
+            })
+        })
+            })
+                .catch(error => {
+                    console.log('error', error)
+                    res.json({ message: "Error ocurred, please try again" })
+                })
+        })
+
+router.delete('/bookmark/remove/:userID/:spielID',passport.authenticate('jwt', { session: false }), (req, res) => {
+    Bookmark.findOneAndDelete({spielID: req.params.spielID})
+    
+    .then(response => {
+            res.json({ deleteResponse: response });
+        })
+
+        .catch(err => {
+            res.json({ message: 'Error occured... Please try again.'})
+        })
+});
+
 
 router.put('/:name/follow/:namex', passport.authenticate('jwt', { session: false }), (req, res) => {
     console.log('route is being on PUT')
@@ -412,6 +554,8 @@ router.get('/:id/group', passport.authenticate('jwt', { session: false }), (req,
         })
 });
 
+
+
 router.post('/signup', (req, res) => {
     // POST - adding the new user to the database
     console.log('===> Inside of /signup');
@@ -542,7 +686,7 @@ router.put('/:id', passport.authenticate('jwt', { session: false }), (req, res) 
 });
 
 //change your pfp
-router.put('/:id', upload.single('image'),passport.authenticate('jwt', { session: false }), (req, res) => {
+router.put('/:id', upload.single('image'), passport.authenticate('jwt', { session: false }), (req, res) => {
     console.log('route is being on xyz')
     console.log(req.file)
 

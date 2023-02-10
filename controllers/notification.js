@@ -15,19 +15,33 @@ router.get('/test', (req, res) => {
     res.json({ message: 'User endpoint OK! ✅' });
 });
 
-router.get('/:id', (req, res) => {
-    // Purpose: Fetch one example from DB and return
-    console.log('=====> Inside GET /users/:id');
+// router.get('/:id', (req, res) => {
+//     // Purpose: Fetch one example from DB and return
+//     console.log('=====> Inside GET /users/:id');
 
-    User.findById(req.params.id)
-    .then(user => {
-        res.json({ user: user });
+//     User.findById(req.params.id)
+//     .then(user => {
+//         res.json({ user: user });
+//     })
+//     .catch(err => {
+//         console.log('Error in user#show:', err);
+//         res.json({ message: 'Error occured... Please try again.'})
+//     });
+// });
+
+router.get('/:username', (req, res) => {
+    Notification.find({to: req.params.username})
+    .then(foundNotifs => {
+        console.log("found notifs", foundNotifs)
+        res.json({ foundNotifs: foundNotifs });
     })
     .catch(err => {
         console.log('Error in user#show:', err);
         res.json({ message: 'Error occured... Please try again.'})
     });
 });
+
+
 
 router.post('/:from/:to/:id', passport.authenticate('jwt', { session: false }), (req, res) => {
     Notification.create({

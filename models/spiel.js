@@ -10,7 +10,10 @@ const spielSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Comment'
     }],
-
+    bookmarks: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Bookmarks'
+    }],
     date: {
         type: Date,
         default: Date.now()
