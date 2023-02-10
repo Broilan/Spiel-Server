@@ -1,4 +1,4 @@
-Spiel is a full-stack social media application I designed in pursuit of a solid addition to my portfolio, as well as to develop my strengthen my understanding of the MERN stack and it's intracacies. 
+Spiel is a full-stack social media application I designed in pursuit of a solid addition to my portfolio, as well as to develop and my strengthen my understanding of the MERN stack and it's intracacies. 
 -----------------------------------
 CURRENT FEATURES:
 -------
