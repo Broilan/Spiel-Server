@@ -579,7 +579,7 @@ router.post('/signup', (req, res) => {
                 groups: [],
                 comments: [],
                 followers: [],
-                following: ['63df105e41eb75462411caa3'],
+                following: ['63e6aa396fd4d94b48ef9ff6'],
                 notifications: [],
                 likedPosts: []
             });
